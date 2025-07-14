@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>텔레파시 게임</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #333;
+    }
+
+    .container {
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 16px;
+      width: 380px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+      text-align: center;
+      transition: 0.3s ease;
+    }
+
+    h2 {
+      margin-bottom: 24px;
+      font-size: 22px;
+      color: #2c3e50;
+    }
+
+    .status-box {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .player-slot {
+      flex: 1;
+      padding: 14px;
+      border-radius: 10px;
+      background: #e0e0e0;
+      font-weight: 600;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+    }
+
+    .player-slot:hover:not(.occupied):not(.selected) {
+      background: #d6d6d6;
+    }
+
+    .player-slot.occupied:not(.selected) {
+      background: #cfd8dc;
+      color: #555;
+      cursor: not-allowed;
+    }
+
+    .player-slot.selected {
+      border-color: #2196f3;
+      background: #e3f2fd;
+      cursor: pointer;
+    }
+
+    .player-slot.submitted {
+      box-shadow: inset 0 0 0 3px #4caf50;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      outline-offset: 2px;
+      outline-color: transparent;
+      transition: outline-color 0.2s ease;
+    }
+
+    input:focus {
+      outline-color: #2196f3;
+      border-color: #2196f3;
+    }
+
+    button {
+      background: #2196f3;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background: #1976d2;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #currentTurnText {
+      margin-top: 8px;
+      font-weight: bold;
+      color: #444;
+    }
+
+    #topicDisplay {
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🧠 텔레파시 게임</h2>
+
+    <div class="status-box" id="playerStatus">
+      <div class="player-slot" id="slot1" onclick="toggleSlot(1)">1번</div>
+      <div class="player-slot" id="slot2" onclick="toggleSlot(2)">2번</div>
+      <div class="player-slot" id="slot3" onclick="toggleSlot(3)">3번</div>
+    </div>
+
+    <div id="currentTurnDisplay" class="hidden">
+      <p id="currentTurnText"></p>
+    </div>
+
+    <div id="waiting" class="hidden">
+      <p>다른 플레이어 대기 중...</p>
+    </div>
+
+    <div id="topicInput" class="hidden">
+      <p><strong>당신 차례입니다! 주제를 정하세요.</strong></p>
+      <input id="topic" placeholder="주제 입력" autocomplete="off" />
+      <button onclick="submitTopic()">주제 제출</button>
+    </div>
+
+    <div id="letterInput" class="hidden">
+      <p id="topicDisplay"></p>
+      <input id="letter" maxlength="1" placeholder="한 글자 입력" autocomplete="off" />
+      <button onclick="submitLetter()">제출</button>
+    </div>
+
+    <div id="result" class="hidden">
+      <p><strong>주제:</strong> <span id="finalTopic"></span></p>
+      <p><strong>단어:</strong> <span id="finalWord"></span></p>
+      <button id="nextBtn" class="hidden" onclick="nextRound()">다음 라운드</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io();
+    let myRole = null;
+
+    const slots = [
+      document.getElementById("slot1"),
+      document.getElementById("slot2"),
+      document.getElementById("slot3")
+    ];
+
+    function toggleSlot(roleNum) {
+      const slot = slots[roleNum - 1];
+      const role = roleNum.toString();
+      if (slot.classList.contains("occupied") && !slot.classList.contains("selected")) return;
+      if (slot.classList.contains("selected")) {
+        socket.emit("leave-role", role);
+        myRole = null;
+      } else {
+        socket.emit("select-role", role);
+        myRole = role;
+      }
+    }
+
+    function submitTopic() {
+      const topic = document.getElementById("topic").value.trim();
+      if (!topic) return alert("주제를 입력하세요.");
+      socket.emit("submit-topic", topic);
+      document.getElementById("topicInput").classList.add("hidden");
+      document.getElementById("currentTurnDisplay").classList.add("hidden"); // 주제 제출 후 문구 숨김
+    }
+
+    function submitLetter() {
+      const letter = document.getElementById("letter").value.trim();
+      if (!letter || letter.length !== 1) return alert("한 글자를 입력하세요.");
+      socket.emit("submit-letter", { role: myRole, letter });
+      document.getElementById("letterInput").classList.add("hidden");
+    }
+
+    function nextRound() {
+      socket.emit("next-round");
+      document.getElementById("result").classList.add("hidden");
+      document.getElementById("nextBtn").classList.add("hidden");
+      document.getElementById("waiting").classList.remove("hidden");
+    }
+
+    socket.on("update-players", (players) => {
+      for (let i = 0; i < 3; i++) {
+        const slot = slots[i];
+        const role = (i + 1).toString();
+        const isMine = myRole === role;
+        const isOccupied = !!players[role];
+        slot.textContent = `${i + 1}번`;
+        slot.classList.toggle("occupied", isOccupied);
+        slot.classList.toggle("selected", isMine);
+        slot.classList.remove("submitted");
+      }
+    });
+
+    socket.on("start-topic-input", (turn) => {
+      document.getElementById("topic").value = ""; // 이전 주제 입력 초기화
+      document.getElementById("waiting").classList.add("hidden");
+      document.getElementById("currentTurnDisplay").classList.remove("hidden");
+      document.getElementById("currentTurnText").textContent = `${turn}번이 주제를 정하는 중입니다.`;
+      if (myRole === turn.toString()) {
+        document.getElementById("topicInput").classList.remove("hidden");
+      }
+    });
+
+    socket.on("start-letter-input", (topic) => {
+      document.getElementById("letter").value = ""; // 이전 글자 입력 초기화
+      document.getElementById("topicInput").classList.add("hidden");
+      document.getElementById("waiting").classList.add("hidden");
+      document.getElementById("topicDisplay").textContent = `주제: ${topic}`;
+      document.getElementById("letterInput").classList.remove("hidden");
+      slots.forEach(el => el.classList.remove("submitted"));
+    });
+
+    socket.on("update-submissions", (submittedRoles) => {
+      for (let i = 0; i < 3; i++) {
+        const role = (i + 1).toString();
+        slots[i].classList.toggle("submitted", submittedRoles[role]);
+      }
+    });
+
+    socket.on("show-result", ({ topic, word, turn }) => {
+      document.getElementById("finalTopic").textContent = topic;
+      document.getElementById("finalWord").textContent = word;
+      document.getElementById("result").classList.remove("hidden");
+      if (myRole === turn.toString()) {
+        document.getElementById("nextBtn").classList.remove("hidden");
+      }
+    });
+
+    socket.on("reload", () => {
+      alert("플레이어가 나가 재시작합니다.");
+      location.reload();
+    });
+  </script>
+</body>
+</html>
