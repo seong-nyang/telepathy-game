@@ -238,7 +238,12 @@
     socket.on("update-submissions", (submittedRoles) => {
       for (let i = 0; i < 3; i++) {
         const role = (i + 1).toString();
-        slots[i].classList.toggle("submitted", submittedRoles[role]);
+        const slot = slots[i];
+        if (myRole === role) {
+          slot.classList.toggle("submitted", submittedRoles[role]);
+        } else {
+          slot.classList.remove("submitted");
+        }
       }
     });
 
