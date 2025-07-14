@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>텔레파시 게임</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -52,7 +50,6 @@
       border: 2px solid transparent;
       transition: all 0.2s ease;
       cursor: pointer;
-      position: relative;
       user-select: none;
     }
 
@@ -106,9 +103,7 @@
       background: #1976d2;
     }
 
-    .hidden {
-      display: none;
-    }
+    .hidden { display: none; }
 
     #currentTurnText {
       margin-top: 8px;
@@ -161,7 +156,10 @@
 
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script>
-    const socket = io("https://a5b7c631-fe72-4e20-bb3c-86afb678b23d-00-13tz8ca5hrwbj.pike.replit.dev/");
+    const socket = io("wss://a5b7c631-fe72-4e20-bb3c-86afb678b23d-00-13tz8ca5hrwbj.pike.replit.dev", {
+      transports: ['websocket']
+    });
+
     let myRole = null;
 
     const slots = [
@@ -188,7 +186,7 @@
       if (!topic) return alert("주제를 입력하세요.");
       socket.emit("submit-topic", topic);
       document.getElementById("topicInput").classList.add("hidden");
-      document.getElementById("currentTurnDisplay").classList.add("hidden"); // 주제 제출 후 문구 숨김
+      document.getElementById("currentTurnDisplay").classList.add("hidden");
     }
 
     function submitLetter() {
@@ -219,7 +217,7 @@
     });
 
     socket.on("start-topic-input", (turn) => {
-      document.getElementById("topic").value = ""; // 이전 주제 입력 초기화
+      document.getElementById("topic").value = "";
       document.getElementById("waiting").classList.add("hidden");
       document.getElementById("currentTurnDisplay").classList.remove("hidden");
       document.getElementById("currentTurnText").textContent = `${turn}번이 주제를 정하는 중입니다.`;
@@ -229,7 +227,7 @@
     });
 
     socket.on("start-letter-input", (topic) => {
-      document.getElementById("letter").value = ""; // 이전 글자 입력 초기화
+      document.getElementById("letter").value = "";
       document.getElementById("topicInput").classList.add("hidden");
       document.getElementById("waiting").classList.add("hidden");
       document.getElementById("topicDisplay").textContent = `주제: ${topic}`;
