@@ -171,6 +171,8 @@
       document.getElementById("slot3")
     ];
 
+    let myRole = null;
+
     function toggleSlot(roleNum) {
       const slot = slots[roleNum - 1];
       const role = roleNum.toString();
@@ -189,7 +191,7 @@
       if (!topic) return alert("주제를 입력하세요.");
       socket.emit("submit-topic", topic);
       document.getElementById("topicInput").classList.add("hidden");
-      document.getElementById("currentTurnDisplay").classList.add("hidden"); // 주제 제출 후 문구 숨김
+      document.getElementById("currentTurnDisplay").classList.add("hidden");
     }
 
     function submitLetter() {
@@ -220,7 +222,7 @@
     });
 
     socket.on("start-topic-input", (turn) => {
-      document.getElementById("topic").value = ""; // 이전 주제 입력 초기화
+      document.getElementById("topic").value = "";
       document.getElementById("waiting").classList.add("hidden");
       document.getElementById("currentTurnDisplay").classList.remove("hidden");
       document.getElementById("currentTurnText").textContent = `${turn}번이 주제를 정하는 중입니다.`;
@@ -230,7 +232,7 @@
     });
 
     socket.on("start-letter-input", (topic) => {
-      document.getElementById("letter").value = ""; // 이전 글자 입력 초기화
+      document.getElementById("letter").value = "";
       document.getElementById("topicInput").classList.add("hidden");
       document.getElementById("waiting").classList.add("hidden");
       document.getElementById("topicDisplay").textContent = `주제: ${topic}`;
